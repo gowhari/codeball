@@ -1,0 +1,14 @@
+{
+  "name": "team3x",
+  "authors": [
+    "iman gowhari <gowhari@gmail.com>"
+  ],
+  "description": "",
+  "main": "",
+  "license": "MIT",
+  "homepage": "",
+  "private": true,
+  "dependencies": {
+    "fabric.js": "fabric#^2.4.1"
+  }
+}

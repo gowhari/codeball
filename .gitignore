@@ -1,0 +1,4 @@
+*.pyc
+.pyenvrc
+server/__pycache__/
+ui/bower_components/

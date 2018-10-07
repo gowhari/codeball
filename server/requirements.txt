@@ -1,0 +1,3 @@
+gevent==1.3.6
+greenlet==0.4.15
+ws4py==0.5.1
