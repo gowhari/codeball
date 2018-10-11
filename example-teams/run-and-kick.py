@@ -1,10 +1,8 @@
+import sys
 import math
 import json
 import random
 from ws4py.client.threadedclient import WebSocketClient
-
-
-ws_url = 'ws://localhost:9000/play/NEW1'
 
 
 class Connection(WebSocketClient):
@@ -75,6 +73,11 @@ class Connection(WebSocketClient):
 
 
 def main():
+    if len(sys.argv) != 3:
+        print('usage: {} host game-name'.format(sys.argv[0]))
+        exit(1)
+    host, game_name = sys.argv[1:]
+    ws_url = 'ws://{}:9000/play/{}'.format(host, game_name)
     try:
         ws = Connection(ws_url)
         ws.connect()

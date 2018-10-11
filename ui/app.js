@@ -11,6 +11,7 @@
     var scoreboard;
     var curr_time = 0;
     var score = [0, 0];
+    var default_game_name = 'NEW';
 
 
     var pr = function() {
@@ -46,7 +47,12 @@
         var goal_2 = new fabric.Rect({left: canvas_x(field.width) - 5, top: canvas_y(field.height / 2 - field.goal_size / 2), fill: '#fff', width: 5, height: canvas_y(field.goal_size)});
         canvas.add(goal_1);
         canvas.add(goal_2);
-        var ws = new WebSocket('ws://localhost:9000/view/NEW1');
+        var game_name = location.hash.slice(1);
+        if (game_name == '') {
+            location.hash = game_name = default_game_name;
+        }
+        var ws_url = 'ws://' + location.hostname + ':9000/view/' + game_name;
+        var ws = new WebSocket(ws_url);
         ws.onmessage = ws_onmessage;
         scoreboard = document.querySelector('.scoreboard');
     };
