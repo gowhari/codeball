@@ -102,10 +102,16 @@ class Team:
     def update_players(self, data):
         for i, p in enumerate(self.players):
             d = data[i]
+            if self.num == 1:
+                d['x'] = self.game.field.width - d['x']
+            if not self.is_valid_move(p, d):
+                continue
             p.x = d['x']
             p.y = d['y']
-            if self.num == 1:
-                p.x = self.game.field.width - p.x
+
+    def is_valid_move(self, p, d):
+        dist = abs((p.x + p.y * 1j) - (d['x'] + d['y'] * 1j))
+        return dist <= config.game.max_player_move
 
     def get_data(self, rtl=False):
         return [i.get_data(rtl) for i in self.players]
@@ -130,6 +136,8 @@ class Game:
 
     def process_kick(self, kick, team):
         if kick is None:
+            return
+        if kick['speed'] > config.game.max_kick_speed:
             return
         self.ball.speed = kick['speed']
         direction = kick['direction']

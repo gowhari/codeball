@@ -50,8 +50,8 @@ class Connection(WebSocketClient):
         dist_x = abs(dist_x)
         dist_y = abs(dist_y)
         able_to_kick = dist_x < 0.5 and dist_y < 0.5
-        dist_x = min(dist_x, 0.2)
-        dist_y = min(dist_y, 0.2)
+        dist_x = min(dist_x, 0.2121)
+        dist_y = min(dist_y, 0.2121)
         player['x'] += dist_x * dir_x
         player['y'] += dist_y * dir_y
         return able_to_kick
@@ -62,7 +62,7 @@ class Connection(WebSocketClient):
             return None
         self.kick_in_prev = True
         kick_dir = random.randint(-45, 45)
-        kick_speed = random.randint(10, 30)
+        kick_speed = random.randint(15, 30)
         kick = {'direction': kick_dir, 'speed': kick_speed}
         return kick
 
