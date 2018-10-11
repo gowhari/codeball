@@ -11,22 +11,20 @@ class Connection(WebSocketClient):
 
     def opened(self):
         self.state = None
-        self.token = None
         self.field = None
         self.kick_in_prev = False
 
     def received_message(self, message):
         data = json.loads(message.data.decode())
-        if 'state' in data:
-            self.state = data['state']
-        elif 'token' in data:
-            self.token = data['token']
+        if data['message'] == 'state':
+            self.state = data['data']
+        elif data['message'] == 'turn':
             self.action()
-        elif 'field' in data:
-            self.field = data['field']
-        elif 'message' in data:
+        elif data['message'] == 'field':
+            self.field = data['data']
+        elif data['message'] == 'info':
             pass
-        elif 'goal' in data:
+        elif data['message'] == 'goal':
             pass
         else:
             assert 0, 'unknown message: %s' % data
@@ -72,12 +70,8 @@ class Connection(WebSocketClient):
         player = self.find_nearest_player()
         able_to_kick = self.move_player_to_ball(player)
         kick = self.kick() if able_to_kick else None
-        players = self.state['ours']
-        d = [self.token]
-        for p in players:
-            d.append([p['x'], p['y']])
-        d.append(kick)
-        self.send(json.dumps(d))
+        data = {'players': self.state['ours'], 'kick': kick}
+        self.send(json.dumps(data))
 
 
 def main():

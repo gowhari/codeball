@@ -8,7 +8,6 @@
     var players;
     var ball;
     var field = {width: 25, height: 15, goal_size: 3};
-    var token;
     var scoreboard;
     var curr_time = 0;
     var score = [0, 0];
@@ -54,32 +53,34 @@
 
 
     var ws_onmessage = function(msg) {
-        var data = JSON.parse(msg.data);
-            if (data.token != undefined) {
-            token = data.token;
+        var msg = JSON.parse(msg.data);
+        if (msg.message == 'state') {
+            update_state(msg.data);
         }
-        else if (data.state != undefined) {
-            for (var i = 0; i < 6; i++) {
-                var d = i < 3 ? data.state.team0[i] : data.state.team1[i - 3];
-                players[i].set({left: canvas_x(d.x), top: canvas_y(d.y)});
-            }
-            var d = data.state.ball;
-            ball.set({left: canvas_x(d.x), top: canvas_y(d.y), angle: (ball.angle + 0) % 360});
-            canvas.renderAll();
-            curr_time = data.state.time;
-            score = data.state.score;
-            update_scoreboard();
+        else if (msg.message == 'goal') {
+            pr('Goal for: ' + msg.team);
         }
-        else if (data.goal) {
-            pr('Goal for: ' + data.team);
-        }
-        else if (data.field != undefined) {
-            field = data.field;
+        else if (msg.message == 'field') {
+            field = msg.data;
         }
     };
 
 
-    var update_scoreboard = function() {
+    var update_state = function(data) {
+        for (var i = 0; i < 6; i++) {
+            var p = i < 3 ? data.team0[i] : data.team1[i - 3];
+            players[i].set({left: canvas_x(p.x), top: canvas_y(p.y)});
+        }
+        var b = data.ball;
+        ball.set({left: canvas_x(b.x), top: canvas_y(b.y)});
+        canvas.renderAll();
+        update_scoreboard(data);
+    };
+
+
+    var update_scoreboard = function(data) {
+        curr_time = data.time;
+        score = data.score;
         var min = curr_time / 60 | 0;
         var sec = curr_time % 60 | 0;
         min = String(min).padStart(2, '0');

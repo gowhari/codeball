@@ -1,6 +1,5 @@
 import time
 import json
-import uuid
 import copy
 import logging
 import football
@@ -25,7 +24,6 @@ class GameConnections:
         self.teams = []
         self.viewers = []
         self.state = 'waiting-for-teams'
-        self.token = None
         self.game = football.Game()
         self.turn = 1
 
@@ -38,15 +36,15 @@ class GameConnections:
         if self.state != 'waiting-for-teams':
             raise ErrorToClient('both teams are already here')
         self.teams.append(connection)
-        self.send_to_all(message='team joined', team_no=len(self.teams))
+        self.send_to_all(message='info', info='team joined', team_no=len(self.teams))
         if len(self.teams) == 2:
             self.state = 'both-teams-ready'
             self.start_game()
 
     def start_game(self):
-        self.send_to_all(field=self.game.field.get_data())
+        self.send_to_all(message='field', data=self.game.field.get_data())
         self.send_state()
-        self.next_frame_token()
+        self.next_turn()
         self.game.start_time = time.time()
 
     def remove_connection(self, conn):
@@ -56,11 +54,10 @@ class GameConnections:
             self.teams.remove(conn)
             self.state = 'team-disconnected'
 
-    def next_frame_token(self):
+    def next_turn(self):
         self.turn = int(not self.turn)
-        self.token = int(uuid.uuid4().hex[0], 16)
         team = self.teams[self.turn]
-        self.send_to_team(team, token=self.token)
+        self.send_to_team(team, message='turn')
 
     def send_to_all(self, **kw):
         msg = json.dumps(kw)
@@ -77,25 +74,22 @@ class GameConnections:
             conn.send(msg)
 
     def received_message(self, msg, team):
-        token = msg[0]
-        if token != self.token:
-            raise ErrorToClient('invalid token')
         if team != self.teams[self.turn]:
             raise ErrorToClient('invalid turn')
         self.process_message(msg)
 
     def process_message(self, msg):
-        self.game.process_message(self.turn, msg[1:])
+        self.game.process_message(self.turn, msg)
         self.send_state()
         if self.game.goal:
             team = self.game.get_attacking_team()
-            self.send_to_all(goal=True, team=team)
+            self.send_to_all(message='goal', team=team)
             self.game.sleep(2)
             self.game.set_init_position(give_ball_to=int(not team))
             self.game.goal = False
             self.send_state()
             self.game.sleep(1)
-        self.next_frame_token()
+        self.next_turn()
 
     def customized_state(self, data, team_no):
         d = copy.copy(data)
@@ -108,9 +102,9 @@ class GameConnections:
         rtl_data = self.game.get_data(rtl=True)
         team_0_data = self.customized_state(data, 0)
         team_1_data = self.customized_state(rtl_data, 1)
-        self.send_to_team(self.teams[0], state=team_0_data)
-        self.send_to_team(self.teams[1], state=team_1_data)
-        self.send_to_viewers(state=data)
+        self.send_to_team(self.teams[0], message='state', data=team_0_data)
+        self.send_to_team(self.teams[1], message='state', data=team_1_data)
+        self.send_to_viewers(message='state', data=data)
 
 
 class Connection(WebSocket):
@@ -155,7 +149,7 @@ class Connection(WebSocket):
             msg = json.loads(data)
         except json.JSONDecodeError:
             raise ErrorToClient('invalid json data')
-        if type(msg) != list or len(msg) != 5:
+        if type(msg) != dict:
             raise ErrorToClient('invalid data')
         self.game.received_message(msg, self)
 

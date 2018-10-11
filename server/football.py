@@ -99,6 +99,14 @@ class Team:
         for i in self.players:
             i.set_init_position()
 
+    def update_players(self, data):
+        for i, p in enumerate(self.players):
+            d = data[i]
+            p.x = d['x']
+            p.y = d['y']
+            if self.num == 1:
+                p.x = self.game.field.width - p.x
+
     def get_data(self, rtl=False):
         return [i.get_data(rtl) for i in self.players]
 
@@ -116,18 +124,20 @@ class Game:
 
     def process_message(self, turn, msg):
         team = self.teams[turn]
-        for i in range(3):
-            p = team.players[i]
-            p.x, p.y = msg[i]
-            if team.num == 1:
-                p.x = self.field.width - p.x
-        kick = msg[3]
-        if kick is not None:
-            self.ball.speed = kick['speed']
-            direction = kick['direction']
-            if team.num == 1:
-                direction = (180 - direction) % 360
-            self.ball.direction = direction
+        team.update_players(msg['players'])
+        self.process_kick(msg['kick'], team)
+        self.process_ball()
+
+    def process_kick(self, kick, team):
+        if kick is None:
+            return
+        self.ball.speed = kick['speed']
+        direction = kick['direction']
+        if team.num == 1:
+            direction = (180 - direction) % 360
+        self.ball.direction = direction
+
+    def process_ball(self):
         self.goal = self.ball.move()
         if self.goal:
             self.score[self.get_attacking_team()] += 1
@@ -146,9 +156,12 @@ class Game:
             'team0': self.teams[0].get_data(rtl),
             'team1': self.teams[1].get_data(rtl),
             'ball': self.ball.get_data(rtl),
-            'time': 0 if self.start_time is None else time.time() - self.start_time - self.stoppage_time,
+            'time': self.get_time(),
             'score': self.score,
         }
+
+    def get_time(self):
+        return 0 if self.start_time is None else time.time() - self.start_time - self.stoppage_time
 
     def sleep(self, sec):
         time.sleep(sec)
