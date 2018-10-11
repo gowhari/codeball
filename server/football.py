@@ -110,6 +110,9 @@ class Game:
         self.ball = Ball(self)
         self.teams = [Team(self, 0), Team(self, 1)]
         self.goal = False
+        self.start_time = None
+        self.stoppage_time = 0
+        self.score = [0, 0]
 
     def process_message(self, turn, msg):
         team = self.teams[turn]
@@ -126,6 +129,8 @@ class Game:
                 direction = (180 - direction) % 360
             self.ball.direction = direction
         self.goal = self.ball.move()
+        if self.goal:
+            self.score[self.get_attacking_team()] += 1
 
     def get_attacking_team(self):
         assert self.goal is True
@@ -138,7 +143,13 @@ class Game:
 
     def get_data(self, rtl=False):
         return {
-            'team-0': self.teams[0].get_data(rtl),
-            'team-1': self.teams[1].get_data(rtl),
+            'team0': self.teams[0].get_data(rtl),
+            'team1': self.teams[1].get_data(rtl),
             'ball': self.ball.get_data(rtl),
+            'time': 0 if self.start_time is None else time.time() - self.start_time - self.stoppage_time,
+            'score': self.score,
         }
+
+    def sleep(self, sec):
+        time.sleep(sec)
+        self.stoppage_time += sec

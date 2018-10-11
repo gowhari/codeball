@@ -10,8 +10,8 @@
     var field = {width: 25, height: 15, goal_size: 3};
     var token;
     var scoreboard;
+    var curr_time = 0;
     var score = [0, 0];
-    var t1 = new Date();
 
 
     var pr = function() {
@@ -60,26 +60,31 @@
         }
         else if (data.state != undefined) {
             for (var i = 0; i < 6; i++) {
-                    var d = i < 3 ? data.state['team-0'][i] : data.state['team-1'][i - 3];
+                var d = i < 3 ? data.state.team0[i] : data.state.team1[i - 3];
                 players[i].set({left: canvas_x(d.x), top: canvas_y(d.y)});
             }
             var d = data.state.ball;
             ball.set({left: canvas_x(d.x), top: canvas_y(d.y), angle: (ball.angle + 0) % 360});
             canvas.renderAll();
+            curr_time = data.state.time;
+            score = data.state.score;
+            update_scoreboard();
         }
         else if (data.goal) {
-            score[data.team] += 1;
+            pr('Goal for: ' + data.team);
         }
         else if (data.field != undefined) {
             field = data.field;
         }
-        var t2 = new Date();
-        var t = (t2.getTime() - t1.getTime()) / 1000;
-        var min = (t / 60 | 0) + '';
-        var sec = (t % 60 | 0) + '';
-        if (min.length == 1) min = '0' + min;
-        if (sec.length == 1) sec = '0' + sec;
-        scoreboard.innerText = min + ':' + sec + '  ' + score[0] + ' - ' + score[1];
+    };
+
+
+    var update_scoreboard = function() {
+        var min = curr_time / 60 | 0;
+        var sec = curr_time % 60 | 0;
+        min = String(min).padStart(2, '0');
+        sec = String(sec).padStart(2, '0');
+        scoreboard.innerText = `${score[0]}-${score[1]} _ ${min}:${sec}`;
     };
 
 

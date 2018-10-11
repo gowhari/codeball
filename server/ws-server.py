@@ -47,6 +47,7 @@ class GameConnections:
         self.send_to_all(field=self.game.field.get_data())
         self.send_state()
         self.next_frame_token()
+        self.game.start_time = time.time()
 
     def remove_connection(self, conn):
         if conn in self.viewers:
@@ -89,16 +90,17 @@ class GameConnections:
         if self.game.goal:
             team = self.game.get_attacking_team()
             self.send_to_all(goal=True, team=team)
+            self.game.sleep(2)
             self.game.set_init_position(give_ball_to=int(not team))
             self.game.goal = False
             self.send_state()
-            time.sleep(3)
+            self.game.sleep(1)
         self.next_frame_token()
 
     def customized_state(self, data, team_no):
         d = copy.copy(data)
-        d['ours'] = d.pop('team-%d' % team_no)
-        d['theirs'] = d.pop('team-%d' % (not team_no))
+        d['ours'] = d.pop('team%d' % team_no)
+        d['theirs'] = d.pop('team%d' % (not team_no))
         return d
 
     def send_state(self):
