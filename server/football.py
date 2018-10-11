@@ -4,6 +4,10 @@ import config
 import logging
 
 
+def points_distance(x1, y1, x2, y2):
+    return abs((x1 + y1 * 1j) - (x2 + y2 * 1j))
+
+
 class Field:
 
     def __init__(self):
@@ -110,7 +114,7 @@ class Team:
             p.y = d['y']
 
     def is_valid_move(self, p, d):
-        dist = abs((p.x + p.y * 1j) - (d['x'] + d['y'] * 1j))
+        dist = points_distance(p.x, p.y, d['x'], d['y'])
         return dist <= config.game.max_player_move
 
     def get_data(self, rtl=False):
@@ -138,6 +142,9 @@ class Game:
         if kick is None:
             return
         if kick['speed'] > config.game.max_kick_speed:
+            return
+        player = team.players[kick['player']]
+        if points_distance(player.x, player.y, self.ball.x, self.ball.y) > config.game.max_distance_to_kick:
             return
         self.ball.speed = kick['speed']
         direction = kick['direction']

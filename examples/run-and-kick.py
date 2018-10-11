@@ -18,6 +18,7 @@ class Connection(WebSocketClient):
         data = json.loads(message.data.decode())
         if data['message'] == 'state':
             self.state = data['data']
+            self.players = self.state['ours']
         elif data['message'] == 'turn':
             self.action()
         elif data['message'] == 'field':
@@ -30,11 +31,10 @@ class Connection(WebSocketClient):
             assert 0, 'unknown message: %s' % data
 
     def find_nearest_player(self):
-        players = self.state['ours']
         ball = self.state['ball']
         min_dist = self.field['width'] + 1
         player = None
-        for p in players:
+        for p in self.players:
             d = math.sqrt((ball['x'] - p['x']) ** 2 + (ball['y'] - p['y']) ** 2)
             if d < min_dist:
                 player = p
@@ -56,21 +56,21 @@ class Connection(WebSocketClient):
         player['y'] += dist_y * dir_y
         return able_to_kick
 
-    def kick(self):
+    def kick(self, player):
         if self.kick_in_prev:
             self.kick_in_prev = False
             return None
         self.kick_in_prev = True
         kick_dir = random.randint(-45, 45)
         kick_speed = random.randint(15, 30)
-        kick = {'direction': kick_dir, 'speed': kick_speed}
+        kick = {'direction': kick_dir, 'speed': kick_speed, 'player': self.players.index(player)}
         return kick
 
     def action(self):
         player = self.find_nearest_player()
         able_to_kick = self.move_player_to_ball(player)
-        kick = self.kick() if able_to_kick else None
-        data = {'players': self.state['ours'], 'kick': kick}
+        kick = self.kick(player) if able_to_kick else None
+        data = {'players': self.players, 'kick': kick}
         self.send(json.dumps(data))
 
 
